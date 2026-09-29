@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Independent Verification | Smart Transit Hold</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Independent Verification</h1>
+        <p>Required before releasing a high-risk held payment</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/result">Result</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <h2>Release Payment Safely</h2>
+
+        <p class="small-text">
+            This payment was placed under Smart Transit Hold because the system
+            detected signs of financial manipulation. To continue, complete
+            independent verification outside the suspicious call.
+        </p>
+
+        <div class="result-box warn-box">
+            <b>Important:</b> Please cut the suspicious call before continuing.
+            <br><br>
+            If you cannot cut the call, <b>DO NOT share the OTP with anyone.</b>
+            Your bank will never ask you to tell, send, or read out your OTP.
+            <br><br>
+            Type the OTP sent to your registered phone number below.
+            <br>
+            <b>For demo, use OTP: 123456</b>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Verification Checklist</h2>
+
+        <p class="small-text">
+            The payment can be released only after the customer confirms they are
+            no longer acting under caller pressure and understands OTP safety.
+        </p>
+
+        <label>
+            <input type="checkbox" id="endedCall">
+            I have ended the suspicious call.
+        </label>
+
+        <label>
+            <input type="checkbox" id="officialChannel">
+            I am using the official bank website, app, or trusted bank channel.
+        </label>
+
+        <label>
+            <input type="checkbox" id="trustedRecipient">
+            I confirm this recipient is trusted and expected.
+        </label>
+
+        <label>
+            <input type="checkbox" id="otpSafety">
+            I understand that my bank will never ask me to share my OTP with anyone.
+        </label>
+
+        <label>Bank OTP</label>
+        <input 
+            id="authCode" 
+            placeholder="Enter OTP sent to your registered phone number"
+        >
+
+        <p class="small-text">
+            For demo use OTP: <b>123456</b>
+        </p>
+
+        <button class="safe-btn" onclick="completeVerification()">
+            Release Payment After OTP Verification
+        </button>
+
+        <button class="secondary-btn" onclick="goBack()">
+            Back to Result
+        </button>
+
+        <div id="verifyResult"></div>
+    </section>
+
+    <section class="card">
+        <h2>Backend Output</h2>
+        <pre id="rawOutput" class="raw-output">No action yet.</pre>
+    </section>
+
+</main>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    function showRaw(data) {
+        document.getElementById("rawOutput").textContent =
+            JSON.stringify(data, null, 4);
+    }
+
+    function checked(id) {
+        return document.getElementById(id).checked;
+    }
+
+    function goBack() {
+        window.location.href = "/result";
+    }
+
+    async function completeVerification() {
+        const authCode = document.getElementById("authCode").value.trim();
+
+        if (
+            !checked("endedCall") ||
+            !checked("officialChannel") ||
+            !checked("trustedRecipient") ||
+            !checked("otpSafety")
+        ) {
+            document.getElementById("verifyResult").innerHTML = `
+                <div class="result-box hold-box">
+                    <h3>Verification Incomplete</h3>
+                    <p>
+                        Complete all safety checks before releasing this payment.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        if (authCode !== "123456") {
+            document.getElementById("verifyResult").innerHTML = `
+                <div class="result-box hold-box">
+                    <h3>Invalid OTP</h3>
+                    <p>
+                        The OTP is incorrect. For this demo, use:
+                        <b>123456</b>
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        document.getElementById("verifyResult").innerHTML = `
+            <div class="result-box warn-box">
+                Completing OTP verification and releasing payment...
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/hold/verified-release`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("verifyResult").innerHTML = `
+                    <div class="result-box hold-box">
+                        <h3>Release Failed</h3>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            localStorage.setItem(
+                "latest_fusion",
+                JSON.stringify(data.data.fusion_result)
+            );
+
+            document.getElementById("verifyResult").innerHTML = `
+                <div class="result-box safe-box">
+                    <h3>Payment Released After Independent OTP Verification</h3>
+                    <p><b>Hold Status:</b> ${data.data.hold_status}</p>
+                    <p><b>Settlement Status:</b> ${data.data.settlement_status}</p>
+                    <p><b>Funds Status:</b> ${data.data.funds_status}</p>
+                    <p>${data.data.message}</p>
+                    <br>
+                    <a href="/result">
+                        <button class="primary-btn">View Final Result</button>
+                    </a>
+                </div>
+            `;
+
+        } catch (error) {
+            showRaw({ error: String(error) });
+
+            document.getElementById("verifyResult").innerHTML = `
+                <div class="result-box hold-box">
+                    <h3>Backend Connection Failed</h3>
+                    <p>Make sure Flask is running.</p>
+                </div>
+            `;
+        }
+    }
+</script>
+
+</body>
+</html>

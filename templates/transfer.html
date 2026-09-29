@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Transit Hold | Transfer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Transfer Money</h1>
+        <p>AI-protected payment transfer</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/">Logout</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <h2>Payment Details</h2>
+
+        <p class="small-text">
+            Enter transfer details. If recent call risk and transaction risk
+            are both suspicious, the payment will be placed under Smart Transit Hold.
+        </p>
+
+        <label>Customer ID</label>
+        <input id="customerId" value="USR_904">
+
+        <label>Amount</label>
+        <input id="amount" type="number" value="80000">
+
+        <label>Recipient ID</label>
+        <input id="recipientId" value="ACC_NEW_SAFE_777">
+
+        <label>Recipient Status</label>
+        <select id="recipientStatus">
+            <option value="UNKNOWN">UNKNOWN</option>
+            <option value="CLEAN">CLEAN</option>
+            <option value="SUSPECTED">SUSPECTED</option>
+            <option value="BLACKLISTED">BLACKLISTED</option>
+        </select>
+
+        <label>Location</label>
+        <input id="location" value="Mumbai">
+
+        <label>Device ID</label>
+        <input id="deviceId" value="MY_IPHONE">
+
+        <label>New Recipient?</label>
+        <select id="newRecipient">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </select>
+
+        <button class="primary-btn" onclick="sendTransfer()">
+            Send Money
+        </button>
+
+        <button class="secondary-btn" onclick="useSafeTransfer()">
+            Use Normal Safe Transfer
+        </button>
+
+        <div id="transferResult"></div>
+    </section>
+
+    <section class="card">
+        <h2>Raw Backend Output</h2>
+        <pre id="rawOutput" class="raw-output">No transfer attempted yet.</pre>
+    </section>
+
+</main>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    const savedCustomerId = localStorage.getItem("customer_id");
+
+    if (savedCustomerId) {
+        document.getElementById("customerId").value = savedCustomerId;
+    }
+
+    function showRaw(data) {
+        document.getElementById("rawOutput").textContent =
+            JSON.stringify(data, null, 4);
+    }
+
+    function boolFromSelect(id) {
+        return document.getElementById(id).value === "true";
+    }
+
+    function useSafeTransfer() {
+        document.getElementById("amount").value = "300";
+        document.getElementById("recipientId").value = "ACC_NORMAL_01";
+        document.getElementById("recipientStatus").value = "CLEAN";
+        document.getElementById("location").value = "Mumbai";
+        document.getElementById("deviceId").value = "MY_IPHONE";
+        document.getElementById("newRecipient").value = "false";
+    }
+
+    async function sendTransfer() {
+        const payload = {
+            customer_id: document.getElementById("customerId").value.trim(),
+            amount: Number(document.getElementById("amount").value),
+            recipient_id: document.getElementById("recipientId").value.trim(),
+            recipient_status: document.getElementById("recipientStatus").value,
+            location: document.getElementById("location").value.trim(),
+            device_id: document.getElementById("deviceId").value.trim(),
+            new_recipient: boolFromSelect("newRecipient")
+        };
+
+        if (!payload.customer_id || !payload.recipient_id || payload.amount <= 0) {
+            alert("Please enter valid transfer details.");
+            return;
+        }
+
+        document.getElementById("transferResult").innerHTML =
+            `<div class="result-box warn-box">Analysing transaction...</div>`;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/transfer`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("transferResult").innerHTML =
+                    `<div class="result-box hold-box">Transfer analysis failed.</div>`;
+                return;
+            }
+
+            const transaction = data.data.transaction_result;
+            const fusion = data.data.fusion_result;
+
+            if (!fusion) {
+                document.getElementById("transferResult").innerHTML = `
+                    <div class="result-box warn-box">
+                        <h3>Transaction Analysed</h3>
+                        <p><b>Transaction Risk:</b> ${(transaction.transaction_risk * 100).toFixed(0)}%</p>
+                        <p><b>Risk Level:</b> ${transaction.risk_level}</p>
+                        <p><b>Call Context:</b> Not available</p>
+                        <p>
+                            Analyse a suspicious call first to activate
+                            cross-channel protection.
+                        </p>
+                        <a href="/risk-detection">
+                            <button class="primary-btn">
+                                Go to Risk Detection
+                            </button>
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            localStorage.setItem("latest_fusion", JSON.stringify(fusion));
+
+            window.location.href = "/result";
+
+        } catch (error) {
+            document.getElementById("transferResult").innerHTML =
+                `<div class="result-box hold-box">Backend connection failed.</div>`;
+
+            showRaw({
+                error: String(error),
+                hint: "Make sure Flask is running and CORS is enabled."
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Transit Hold | Result</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Smart Transit Hold Result</h1>
+        <p>Final payment safety decision</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/verify-release">Verify Release</a>
+        <a href="/">Logout</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <h2 class="result-title">Payment Safety Decision</h2>
+
+        <p class="small-text">
+            The system combined recent call intelligence with transaction risk
+            before allowing settlement.
+        </p>
+
+        <div id="decisionBox">
+            Loading latest result...
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Customer Verification Options</h2>
+
+        <p class="small-text">
+            If the payment is under Smart Transit Hold, it is not completed
+            immediately. The customer can cancel, send it to security review,
+            or continue only after independent verification.
+        </p>
+
+        <div class="hold-actions">
+            <button class="danger-btn" onclick="cancelTransfer()">
+                Cancel Transfer
+            </button>
+
+            <button class="safe-btn" onclick="releaseTransfer()">
+                I Really Need To Transfer
+            </button>
+
+            <button class="secondary-btn" onclick="securityReview()">
+                Send to Security Review
+            </button>
+        </div>
+
+        <div id="actionResult"></div>
+    </section>
+
+    <section class="card">
+        <h2>Raw Backend Output</h2>
+        <pre id="rawOutput" class="raw-output">Loading...</pre>
+    </section>
+
+</main>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+    let latestFusion = null;
+
+    function showRaw(data) {
+        document.getElementById("rawOutput").textContent =
+            JSON.stringify(data, null, 4);
+    }
+
+    function percent(value) {
+        if (value === undefined || value === null) {
+            return "0%";
+        }
+
+        return `${(Number(value) * 100).toFixed(0)}%`;
+    }
+
+    function renderFusion(fusion) {
+        latestFusion = fusion;
+
+        let boxClass = "safe-box";
+
+        if (
+            fusion.decision === "SMART_TRANSIT_HOLD_REQUIRED" ||
+            fusion.decision === "SECURITY_REVIEW_REQUIRED" ||
+            fusion.hold_status === "CANCELLED"
+        ) {
+            boxClass = "hold-box";
+        } else if (
+            fusion.decision === "WARN_AND_VERIFY" ||
+            fusion.hold_status === "RELEASE_BLOCKED_PENDING_VERIFICATION" ||
+            fusion.hold_status === "SENT_TO_SECURITY_REVIEW"
+        ) {
+            boxClass = "warn-box";
+        }
+
+        if (
+            fusion.hold_status === "RELEASED" ||
+            fusion.hold_status === "RELEASED_AFTER_INDEPENDENT_VERIFICATION"
+        ) {
+            boxClass = "safe-box";
+        }
+
+        const holdStatus = fusion.hold_status || "PENDING";
+        const settlementStatus = fusion.settlement_status || "PENDING";
+        const fundsStatus = fusion.funds_status || "PENDING";
+        const customerMessage = fusion.customer_message || "No customer message available.";
+        const recommendedNextStep = fusion.recommended_next_step || "No next step available.";
+
+        document.getElementById("decisionBox").innerHTML = `
+            <div class="result-box ${boxClass}">
+                <div class="big-decision">${fusion.decision}</div>
+
+                <p><b>Final Risk Level:</b> ${fusion.final_risk_level}</p>
+                <p><b>Final Risk:</b> ${percent(fusion.final_risk)}</p>
+                <p><b>Allow Transaction:</b> ${fusion.allow_transaction}</p>
+                <p><b>Smart Hold Required:</b> ${fusion.smart_hold_required}</p>
+
+                <hr>
+
+                <p><b>Hold Status:</b> ${holdStatus}</p>
+                <p><b>Settlement Status:</b> ${settlementStatus}</p>
+                <p><b>Funds Status:</b> ${fundsStatus}</p>
+
+                <br>
+
+                <p><b>Customer Message:</b></p>
+                <p>${customerMessage}</p>
+
+                <p><b>Recommended Next Step:</b></p>
+                <p>${recommendedNextStep}</p>
+            </div>
+        `;
+    }
+
+    async function loadLatestFusion() {
+        const localFusion = localStorage.getItem("latest_fusion");
+
+        if (localFusion) {
+            try {
+                const fusion = JSON.parse(localFusion);
+                renderFusion(fusion);
+                showRaw(fusion);
+                return;
+            } catch (error) {
+                localStorage.removeItem("latest_fusion");
+            }
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/api/latest-fusion`);
+            const data = await response.json();
+
+            showRaw(data);
+
+            if (!data.success || !data.data.available) {
+                document.getElementById("decisionBox").innerHTML = `
+                    <div class="result-box warn-box">
+                        <h3>No Fusion Result Found</h3>
+                        <p>Please analyse a call and attempt a transfer first.</p>
+                        <br>
+                        <a href="/risk-detection">
+                            <button class="primary-btn">
+                                Start Risk Detection
+                            </button>
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            renderFusion(data.data.fusion_result);
+
+        } catch (error) {
+            document.getElementById("decisionBox").innerHTML = `
+                <div class="result-box hold-box">
+                    <h3>Backend Connection Failed</h3>
+                    <p>Make sure Flask is running.</p>
+                </div>
+            `;
+
+            showRaw({ error: String(error) });
+        }
+    }
+
+    async function callHoldAction(endpoint, title) {
+        document.getElementById("actionResult").innerHTML = `
+            <div class="result-box warn-box">
+                Processing ${title}...
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`${API_BASE}${endpoint}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("actionResult").innerHTML = `
+                    <div class="result-box hold-box">
+                        <h3>Action Failed</h3>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const updatedFusion = data.data.fusion_result;
+            latestFusion = updatedFusion;
+
+            localStorage.setItem(
+                "latest_fusion",
+                JSON.stringify(updatedFusion)
+            );
+
+            renderFusion(updatedFusion);
+
+            let boxClass = "safe-box";
+
+            if (
+                data.data.hold_status.includes("BLOCKED") ||
+                data.data.hold_status.includes("REVIEW")
+            ) {
+                boxClass = "warn-box";
+            }
+
+            if (data.data.hold_status.includes("CANCELLED")) {
+                boxClass = "hold-box";
+            }
+
+            if (
+                data.data.hold_status.includes("RELEASED")
+            ) {
+                boxClass = "safe-box";
+            }
+
+            document.getElementById("actionResult").innerHTML = `
+                <div class="result-box ${boxClass}">
+                    <h3>${title}</h3>
+                    <p><b>Message:</b> ${data.data.message}</p>
+                    <p><b>Hold Status:</b> ${data.data.hold_status}</p>
+                    <p><b>Settlement Status:</b> ${data.data.settlement_status}</p>
+                    <p><b>Funds Status:</b> ${data.data.funds_status}</p>
+                </div>
+            `;
+
+            return data;
+
+        } catch (error) {
+            document.getElementById("actionResult").innerHTML = `
+                <div class="result-box hold-box">
+                    <h3>Backend Connection Failed</h3>
+                    <p>Make sure Flask is running.</p>
+                </div>
+            `;
+
+            showRaw({ error: String(error) });
+            return null;
+        }
+    }
+
+    function cancelTransfer() {
+        callHoldAction("/api/hold/cancel", "Transfer Cancelled");
+    }
+
+    async function releaseTransfer() {
+        const data = await callHoldAction("/api/hold/release", "Release Request");
+
+        if (
+            data &&
+            data.success &&
+            data.data.verification_required === true
+        ) {
+            document.getElementById("actionResult").innerHTML += `
+                <div class="result-box warn-box">
+                    <h3>Independent Verification Required</h3>
+                    <p>
+                        This high-risk payment cannot be released instantly from
+                        the same pressured session.
+                    </p>
+                    <p>
+                        End the call and verify through an official bank channel
+                        before releasing the payment.
+                    </p>
+                    <a href="/verify-release">
+                        <button class="primary-btn">
+                            Continue to Independent Verification
+                        </button>
+                    </a>
+                </div>
+            `;
+
+            setTimeout(function () {
+                window.location.href = "/verify-release";
+            }, 2500);
+        }
+    }
+
+    function securityReview() {
+        callHoldAction("/api/hold/review", "Security Review Requested");
+    }
+
+    loadLatestFusion();
+</script>
+
+</body>
+</html>

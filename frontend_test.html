@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Transit Hold - Demo Frontend</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 22px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        header p {
+            margin-top: 8px;
+            color: #d1d5db;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 25px auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #111827;
+        }
+
+        label {
+            display: block;
+            margin-top: 14px;
+            font-weight: bold;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 11px;
+            margin-top: 6px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 16px;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .danger {
+            background: #dc2626;
+        }
+
+        .danger:hover {
+            background: #b91c1c;
+        }
+
+        .success {
+            background: #059669;
+        }
+
+        .success:hover {
+            background: #047857;
+        }
+
+        .warning-box {
+            margin-top: 18px;
+            padding: 16px;
+            border-radius: 10px;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            font-weight: bold;
+        }
+
+        .hold-box {
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 10px;
+            background: #fee2e2;
+            border: 1px solid #dc2626;
+            color: #7f1d1d;
+            font-weight: bold;
+        }
+
+        .safe-box {
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 10px;
+            background: #dcfce7;
+            border: 1px solid #16a34a;
+            color: #14532d;
+            font-weight: bold;
+        }
+
+        .result {
+            white-space: pre-wrap;
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 16px;
+            max-height: 480px;
+            overflow: auto;
+            font-size: 14px;
+        }
+
+        .full {
+            grid-column: 1 / 3;
+        }
+
+        .small-text {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 850px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Smart Transit Hold</h1>
+    <p>Real-Time Cross-Channel Scam Intervention Prototype</p>
+</header>
+
+<div class="container">
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>1. Backend Status</h2>
+            <p class="small-text">
+                Check if Flask, Call Intelligence, Risk Fusion and Bank V7 are online.
+            </p>
+
+            <button onclick="checkHealth()">Check Backend</button>
+
+            <div id="healthStatus" class="status-pill">
+                Not checked
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2. Demo Controls</h2>
+            <p class="small-text">
+                Use these buttons to reset state or run a full demo quickly.
+            </p>
+
+            <button class="danger" onclick="resetState()">Reset Backend State</button>
+            <button class="success" onclick="runFusionDemo()">Run Fusion Demo</button>
+        </div>
+
+        <div class="card full">
+            <h2>3. Risk Detection Mode</h2>
+            <p class="small-text">
+                Paste a suspicious call transcript. This simulates the customer enabling
+                Risk Detection Mode during or after a call.
+            </p>
+
+            <label>Call Transcript</label>
+            <textarea id="callTranscript">Hello sir, I am calling from ABC Bank fraud prevention department. We detected suspicious international transactions on your debit card. Your card may be compromised. Open your mobile banking app and transfer your available balance to a temporary safe account immediately. Do not contact anyone else.</textarea>
+
+            <label>Detected Language</label>
+            <input id="detectedLanguage" value="en">
+
+            <button onclick="analyzeCallText()">Analyse Call</button>
+
+            <div id="callResultBox"></div>
+        </div>
+
+        <div class="card full">
+            <h2>4. Transfer Money</h2>
+            <p class="small-text">
+                After analysing the call, attempt a transfer. The backend will combine
+                call risk + transaction risk using Risk Fusion.
+            </p>
+
+            <label>Amount</label>
+            <input id="amount" type="number" value="80000">
+
+            <label>Recipient ID</label>
+            <input id="recipientId" value="ACC_NEW_SAFE_777">
+
+            <label>Recipient Status</label>
+            <select id="recipientStatus">
+                <option value="UNKNOWN">UNKNOWN</option>
+                <option value="CLEAN">CLEAN</option>
+                <option value="SUSPECTED">SUSPECTED</option>
+                <option value="BLACKLISTED">BLACKLISTED</option>
+            </select>
+
+            <label>Location</label>
+            <input id="location" value="Mumbai">
+
+            <label>Device ID</label>
+            <input id="deviceId" value="MY_IPHONE">
+
+            <label>New Recipient?</label>
+            <select id="newRecipient">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+            </select>
+
+            <button onclick="sendTransfer()">Send Money</button>
+
+            <div id="transferDecisionBox"></div>
+        </div>
+
+        <div class="card full">
+            <h2>5. Latest Fusion Result</h2>
+            <button onclick="getLatestFusion()">Refresh Latest Fusion</button>
+
+            <div id="mainResult" class="result">
+                Output will appear here.
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    function showRaw(data) {
+        document.getElementById("mainResult").textContent =
+            JSON.stringify(data, null, 4);
+    }
+
+    function boolFromSelect(id) {
+        return document.getElementById(id).value === "true";
+    }
+
+    async function checkHealth() {
+        try {
+            const response = await fetch(`${API_BASE}/health`);
+            const data = await response.json();
+
+            document.getElementById("healthStatus").textContent =
+                "Backend Online";
+
+            showRaw(data);
+        } catch (error) {
+            document.getElementById("healthStatus").textContent =
+                "Backend Offline";
+
+            showRaw({
+                error: String(error),
+                hint: "Make sure Flask is running with py app.py"
+            });
+        }
+    }
+
+    async function resetState() {
+        try {
+            const response = await fetch(`${API_BASE}/api/reset`, {
+                method: "POST"
+            });
+
+            const data = await response.json();
+
+            document.getElementById("callResultBox").innerHTML = "";
+            document.getElementById("transferDecisionBox").innerHTML = "";
+
+            showRaw(data);
+        } catch (error) {
+            showRaw({ error: String(error) });
+        }
+    }
+
+    async function analyzeCallText() {
+        const transcript = document.getElementById("callTranscript").value;
+        const detectedLanguage = document.getElementById("detectedLanguage").value;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/analyze-call-text`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    transcript: transcript,
+                    detected_language: detectedLanguage
+                })
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("callResultBox").innerHTML =
+                    `<div class="hold-box">Call analysis failed.</div>`;
+                return;
+            }
+
+            const call = data.data.call_result;
+
+            let boxClass = "safe-box";
+
+            if (call.risk_level === "HIGH") {
+                boxClass = "hold-box";
+            } else if (call.risk_level === "MEDIUM") {
+                boxClass = "warning-box";
+            }
+
+            document.getElementById("callResultBox").innerHTML = `
+                <div class="${boxClass}">
+                    Call Risk Level: ${call.risk_level}<br>
+                    Scam Risk: ${(call.scam_risk * 100).toFixed(0)}%<br>
+                    Manipulation Risk: ${(call.manipulation_risk * 100).toFixed(0)}%<br>
+                    Recommended Action: ${call.recommended_action}
+                </div>
+            `;
+        } catch (error) {
+            showRaw({ error: String(error) });
+        }
+    }
+
+    async function sendTransfer() {
+        const amount = Number(document.getElementById("amount").value);
+        const recipientId = document.getElementById("recipientId").value;
+        const recipientStatus = document.getElementById("recipientStatus").value;
+        const location = document.getElementById("location").value;
+        const deviceId = document.getElementById("deviceId").value;
+        const newRecipient = boolFromSelect("newRecipient");
+
+        try {
+            const response = await fetch(`${API_BASE}/api/transfer`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    recipient_id: recipientId,
+                    recipient_status: recipientStatus,
+                    new_recipient: newRecipient,
+                    location: location,
+                    device_id: deviceId
+                })
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("transferDecisionBox").innerHTML =
+                    `<div class="hold-box">Transfer failed.</div>`;
+                return;
+            }
+
+            const fusion = data.data.fusion_result;
+
+            if (!fusion) {
+                document.getElementById("transferDecisionBox").innerHTML = `
+                    <div class="warning-box">
+                        Transfer analysed without call context.<br>
+                        Analyse a call first to activate cross-channel protection.
+                    </div>
+                `;
+                return;
+            }
+
+            let boxClass = "safe-box";
+
+            if (
+                fusion.decision === "SMART_TRANSIT_HOLD_REQUIRED" ||
+                fusion.decision === "SECURITY_REVIEW_REQUIRED"
+            ) {
+                boxClass = "hold-box";
+            } else if (fusion.decision === "WARN_AND_VERIFY") {
+                boxClass = "warning-box";
+            }
+
+            document.getElementById("transferDecisionBox").innerHTML = `
+                <div class="${boxClass}">
+                    Final Decision: ${fusion.decision}<br>
+                    Final Risk Level: ${fusion.final_risk_level}<br>
+                    Final Risk: ${(fusion.final_risk * 100).toFixed(0)}%<br><br>
+                    ${fusion.customer_message}
+                </div>
+            `;
+        } catch (error) {
+            showRaw({ error: String(error) });
+        }
+    }
+
+    async function getLatestFusion() {
+        try {
+            const response = await fetch(`${API_BASE}/api/latest-fusion`);
+            const data = await response.json();
+            showRaw(data);
+        } catch (error) {
+            showRaw({ error: String(error) });
+        }
+    }
+
+    async function runFusionDemo() {
+        try {
+            const response = await fetch(`${API_BASE}/api/fusion-demo`);
+            const data = await response.json();
+
+            showRaw(data);
+
+            const fusion = data.data.fusion_result;
+
+            document.getElementById("transferDecisionBox").innerHTML = `
+                <div class="hold-box">
+                    Demo Decision: ${fusion.decision}<br>
+                    Final Risk Level: ${fusion.final_risk_level}<br>
+                    Final Risk: ${(fusion.final_risk * 100).toFixed(0)}%<br><br>
+                    ${fusion.customer_message}
+                </div>
+            `;
+        } catch (error) {
+            showRaw({ error: String(error) });
+        }
+    }
+</script>
+
+</body>
+</html>

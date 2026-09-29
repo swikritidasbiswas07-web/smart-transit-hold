@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Transit Hold | Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Smart Transit Hold Bank</h1>
+        <p>Customer security dashboard</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/mobile-report">Mobile Report</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/">Logout</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <h2>Welcome, <span id="customerId">USR_904</span></h2>
+        <p class="small-text">
+            Your account is protected by real-time call intelligence,
+            transaction risk analysis and Smart Transit Hold.
+        </p>
+    </section>
+
+    <section class="grid">
+        <div class="stat-card">
+            <span>Available Balance</span>
+            <strong>₹50,000</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Security Status</span>
+            <strong>Protected</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Risk Detection Mode</span>
+            <strong>Ready</strong>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Quick Actions</h2>
+
+        <div class="action-grid">
+
+            <a href="/mobile-report" class="action-card">
+                <h3>Mobile Fraud Report Simulation</h3>
+                <p class="small-text">
+                    Simulate the phone-side “Suspect Spam/Fraud” button and upload
+                    a suspicious call recording to the bank backend.
+                </p>
+            </a>
+
+            <a href="/risk-detection" class="action-card">
+                <h3>Manual Risk Detection Mode</h3>
+                <p class="small-text">
+                    Paste a suspicious call transcript and analyse it manually.
+                </p>
+            </a>
+
+            <a href="/transfer-page" class="action-card">
+                <h3>Transfer Money</h3>
+                <p class="small-text">
+                    Send money with AI-powered transaction protection.
+                </p>
+            </a>
+
+            <a href="/result" class="action-card">
+                <h3>Latest Smart Hold Result</h3>
+                <p class="small-text">
+                    View the latest fused decision and customer verification options.
+                </p>
+            </a>
+
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>How Smart Transit Hold Works</h2>
+
+        <p class="small-text">
+            When a suspicious call is detected close to a risky payment attempt,
+            the system does not instantly complete the transfer. Instead, it
+            places the payment under Smart Transit Hold and asks the customer to
+            verify independently.
+        </p>
+
+        <div class="result-box warn-box">
+            Phone Call → Suspect Spam/Fraud → Audio Analysis → Transfer Attempt → Risk Fusion → Smart Transit Hold
+        </div>
+    </section>
+
+</main>
+
+<script>
+    const savedCustomerId = localStorage.getItem("customer_id");
+
+    if (savedCustomerId) {
+        document.getElementById("customerId").textContent = savedCustomerId;
+    }
+</script>
+
+</body>
+</html>

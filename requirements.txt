@@ -1,0 +1,8 @@
+flask
+flask-cors
+scikit-learn
+joblib
+numpy
+faster-whisper
+werkzeug
+pandas

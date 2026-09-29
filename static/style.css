@@ -1,0 +1,477 @@
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #f4f7fb;
+    color: #172033;
+}
+
+.login-body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #07111f, #12365f);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-container {
+    width: 92%;
+    max-width: 1100px;
+    min-height: 620px;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.login-left {
+    background: linear-gradient(160deg, #07111f, #0f3b67);
+    color: white;
+    padding: 55px;
+}
+
+.login-left h1 {
+    font-size: 42px;
+    margin: 0 0 15px;
+}
+
+.login-left > p {
+    font-size: 18px;
+    color: #c9d6e6;
+    line-height: 1.6;
+    margin-bottom: 35px;
+}
+
+.feature-box {
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 18px;
+    border-radius: 16px;
+    margin-bottom: 18px;
+}
+
+.feature-box h3 {
+    margin: 0 0 8px;
+}
+
+.feature-box p {
+    margin: 0;
+    color: #dbeafe;
+    line-height: 1.5;
+}
+
+.login-card {
+    padding: 55px 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-card h2 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.muted {
+    color: #687386;
+}
+
+label {
+    display: block;
+    margin-top: 18px;
+    font-weight: 700;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 13px;
+    margin-top: 8px;
+    border: 1px solid #cad5e3;
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #2563eb;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.safe-btn {
+    width: 100%;
+    padding: 14px 18px;
+    margin-top: 22px;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: #2563eb;
+}
+
+.primary-btn:hover {
+    background: #1d4ed8;
+}
+
+.secondary-btn {
+    background: #475569;
+}
+
+.secondary-btn:hover {
+    background: #334155;
+}
+
+.danger-btn {
+    background: #dc2626;
+}
+
+.danger-btn:hover {
+    background: #b91c1c;
+}
+
+.safe-btn {
+    background: #059669;
+}
+
+.safe-btn:hover {
+    background: #047857;
+}
+
+.demo-note {
+    margin-top: 18px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.app-header {
+    background: #08111f;
+    color: white;
+    padding: 20px 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.app-header p {
+    margin: 5px 0 0;
+    color: #cbd5e1;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    margin-left: 18px;
+    font-weight: 700;
+}
+
+.nav-links a:hover {
+    text-decoration: underline;
+}
+
+.page {
+    width: 92%;
+    max-width: 1150px;
+    margin: 30px auto;
+}
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    margin-bottom: 22px;
+}
+
+.card h2,
+.card h3 {
+    margin-top: 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+}
+
+.stat-card span {
+    display: block;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.stat-card strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 26px;
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.action-card {
+    display: block;
+    text-decoration: none;
+    color: #172033;
+    background: white;
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    border: 2px solid transparent;
+}
+
+.action-card:hover {
+    border-color: #2563eb;
+}
+
+.action-card h3 {
+    margin-top: 0;
+}
+
+textarea {
+    min-height: 170px;
+    resize: vertical;
+}
+
+.result-box {
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 14px;
+    line-height: 1.6;
+}
+
+.safe-box {
+    background: #dcfce7;
+    color: #14532d;
+    border: 1px solid #16a34a;
+}
+
+.warn-box {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.hold-box {
+    background: #fee2e2;
+    color: #7f1d1d;
+    border: 1px solid #dc2626;
+}
+
+.raw-output {
+    white-space: pre-wrap;
+    background: #0f172a;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 14px;
+    max-height: 420px;
+    overflow: auto;
+    font-size: 14px;
+}
+
+.result-title {
+    font-size: 34px;
+    margin-bottom: 5px;
+}
+
+.big-decision {
+    font-size: 28px;
+    font-weight: 900;
+    margin: 20px 0;
+}
+
+.hold-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.small-text {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+@media (max-width: 850px) {
+    .login-container,
+    .grid,
+    .action-grid,
+    .hold-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .login-left,
+    .login-card {
+        padding: 35px;
+    }
+
+    .app-header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .nav-links a {
+        margin: 0 8px;
+    }
+}
+/* =============================================================================
+   Mobile Fraud Report Simulation
+============================================================================= */
+
+.mobile-demo-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.phone-frame {
+    width: 340px;
+    min-height: 640px;
+    background: #020617;
+    border-radius: 42px;
+    padding: 18px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+    margin: 0 auto;
+}
+
+.phone-top {
+    width: 95px;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 999px;
+    margin: 0 auto 18px;
+}
+
+.phone-bottom {
+    width: 72px;
+    height: 72px;
+    border: 2px solid #1e293b;
+    border-radius: 999px;
+    margin: 18px auto 0;
+}
+
+.phone-screen {
+    background: linear-gradient(160deg, #0f172a, #1e3a8a);
+    border-radius: 28px;
+    min-height: 500px;
+    padding: 24px;
+    color: white;
+    text-align: center;
+}
+
+.incoming-call-box {
+    margin-top: 35px;
+    padding: 22px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.incoming-call-box h2 {
+    margin: 10px 0;
+    font-size: 24px;
+}
+
+.call-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin: 30px 0;
+}
+
+.call-btn {
+    width: 92px;
+    height: 48px;
+    border: none;
+    border-radius: 999px;
+    color: white;
+    font-weight: 800;
+    cursor: default;
+}
+
+.call-btn.green {
+    background: #16a34a;
+}
+
+.call-btn.red {
+    background: #dc2626;
+}
+
+.fraud-trigger-btn {
+    width: 100%;
+    padding: 15px;
+    background: #f97316;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-weight: 900;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.35);
+}
+
+.fraud-trigger-btn:hover {
+    background: #ea580c;
+}
+
+.mobile-status-box {
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.10);
+    color: #dbeafe;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mobile-status-box.active {
+    background: rgba(254, 243, 199, 0.95);
+    color: #78350f;
+    font-weight: 700;
+}
+
+.mobile-form-card {
+    margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+    .mobile-demo-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .phone-frame {
+        width: 100%;
+        max-width: 340px;
+    }
+}

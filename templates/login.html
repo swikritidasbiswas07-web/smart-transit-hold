@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Transit Hold | Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="login-body">
+
+    <div class="login-container">
+
+        <div class="login-left">
+            <h1>Smart Transit Hold</h1>
+            <p>
+                Real-time banking protection against manipulation-driven
+                financial fraud.
+            </p>
+
+            <div class="feature-box">
+                <h3>AI Security Layer</h3>
+                <p>Detects suspicious calls before risky fund transfers.</p>
+            </div>
+
+            <div class="feature-box">
+                <h3>Cross-Channel Risk Fusion</h3>
+                <p>Combines call intelligence with transaction risk.</p>
+            </div>
+
+            <div class="feature-box">
+                <h3>Pre-Settlement Protection</h3>
+                <p>Places suspicious payments under Smart Transit Hold.</p>
+            </div>
+        </div>
+
+        <div class="login-card">
+            <h2>Customer Login</h2>
+            <p class="muted">Secure demo banking access</p>
+
+            <form onsubmit="loginUser(event)">
+                <label>Customer ID</label>
+                <input 
+                    type="text" 
+                    id="customerId" 
+                    value="USR_904"
+                    required
+                >
+
+                <label>Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    value="demo123"
+                    required
+                >
+
+                <button type="submit" class="primary-btn">
+                    Login Securely
+                </button>
+            </form>
+
+            <p class="demo-note">
+                Demo credentials are pre-filled for presentation.
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        function loginUser(event) {
+            event.preventDefault();
+
+            const customerId = document.getElementById("customerId").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!customerId || !password) {
+                alert("Please enter customer ID and password.");
+                return;
+            }
+
+            localStorage.setItem("customer_id", customerId);
+
+            window.location.href = "/dashboard";
+        }
+    </script>
+
+</body>
+</html>

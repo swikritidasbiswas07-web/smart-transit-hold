@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mobile Fraud Report | Smart Transit Hold</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Mobile Fraud Report Simulation</h1>
+        <p>Phone-side “Suspect Spam/Fraud” trigger</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/mobile-report">Mobile Report</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/result">Result</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <h2>Phone-Side Scam Reporting Flow</h2>
+
+        <p class="small-text">
+            This screen simulates the real mobile banking app workflow.
+            In production, the customer would tap <b>Suspect Spam/Fraud</b>
+            during or after a suspicious phone call. The call audio or transcript
+            would then be securely sent to the bank backend for analysis.
+        </p>
+
+        <div class="result-box warn-box">
+            Prototype note: this page does not record live phone calls.
+            It simulates the phone-side button by allowing you to upload a saved
+            call recording such as MP3, WAV, M4A, or similar audio file.
+        </div>
+    </section>
+
+    <section class="mobile-demo-layout">
+
+        <div class="phone-frame">
+            <div class="phone-top"></div>
+
+            <div class="phone-screen">
+
+                <div class="incoming-call-box">
+                    <p class="small-text">Incoming Call</p>
+                    <h2 id="callerDisplay">Unknown Number</h2>
+                    <p class="small-text">Possible bank/fraud department caller</p>
+                </div>
+
+                <div class="call-buttons">
+                    <button class="call-btn green">Accept</button>
+                    <button class="call-btn red">Decline</button>
+                </div>
+
+                <button class="fraud-trigger-btn" onclick="activateFraudMode()">
+                    Suspect Spam/Fraud
+                </button>
+
+                <div id="fraudModeStatus" class="mobile-status-box">
+                    Risk Detection Mode not activated.
+                </div>
+
+            </div>
+
+            <div class="phone-bottom"></div>
+        </div>
+
+        <div class="card mobile-form-card">
+            <h2>Upload Call Recording</h2>
+
+            <p class="small-text">
+                After tapping <b>Suspect Spam/Fraud</b>, upload the call recording.
+                The backend will transcribe the audio, analyse scam signals, and
+                save the result as the latest call context.
+            </p>
+
+            <label>Customer ID</label>
+            <input id="customerId" value="USR_904">
+
+            <label>Caller Number</label>
+            <input id="callerNumber" value="+91 98765 43210">
+
+            <label>Call Recording Audio File</label>
+            <input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac">
+
+            <button class="primary-btn" onclick="uploadCallRecording()">
+                Send Recording to Bank Security
+            </button>
+
+            <button class="secondary-btn" onclick="goToTransfer()">
+                Continue to Transfer Page
+            </button>
+
+            <div id="uploadResult"></div>
+        </div>
+
+    </section>
+
+    <section class="card">
+        <h2>Raw Backend Output</h2>
+        <pre id="rawOutput" class="raw-output">No mobile fraud report submitted yet.</pre>
+    </section>
+
+</main>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    const savedCustomerId = localStorage.getItem("customer_id");
+
+    if (savedCustomerId) {
+        document.getElementById("customerId").value = savedCustomerId;
+    }
+
+    function showRaw(data) {
+        document.getElementById("rawOutput").textContent =
+            JSON.stringify(data, null, 4);
+    }
+
+    function activateFraudMode() {
+        document.getElementById("fraudModeStatus").innerHTML = `
+            <b>Risk Detection Mode Activated</b><br>
+            Upload the suspicious call recording for analysis.
+        `;
+
+        document.getElementById("fraudModeStatus").className =
+            "mobile-status-box active";
+    }
+
+    async function uploadCallRecording() {
+        const customerId = document.getElementById("customerId").value.trim();
+        const callerNumber = document.getElementById("callerNumber").value.trim();
+        const audioInput = document.getElementById("audioFile");
+
+        if (!customerId) {
+            alert("Customer ID is required.");
+            return;
+        }
+
+        if (!audioInput.files || audioInput.files.length === 0) {
+            alert("Please select a call recording audio file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("customer_id", customerId);
+        formData.append("caller_number", callerNumber);
+        formData.append("report_source", "mobile_suspect_spam_fraud_button");
+        formData.append("audio_file", audioInput.files[0]);
+
+        document.getElementById("uploadResult").innerHTML = `
+            <div class="result-box warn-box">
+                Uploading and analysing call recording...
+                This may take some time for audio transcription.
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/analyze-call-audio-upload`, {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("uploadResult").innerHTML = `
+                    <div class="result-box hold-box">
+                        <h3>Upload Failed</h3>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const call = data.data.call_result;
+            const mobileReport = data.data.mobile_report;
+
+            let boxClass = "safe-box";
+
+            if (call.risk_level === "HIGH") {
+                boxClass = "hold-box";
+            } else if (call.risk_level === "MEDIUM") {
+                boxClass = "warn-box";
+            }
+
+            localStorage.setItem("latest_mobile_report", JSON.stringify(mobileReport));
+
+            document.getElementById("uploadResult").innerHTML = `
+                <div class="result-box ${boxClass}">
+                    <h3>Mobile Fraud Report Analysed</h3>
+                    <p><b>Caller:</b> ${mobileReport.caller_number}</p>
+                    <p><b>Call Risk Level:</b> ${call.risk_level}</p>
+                    <p><b>Scam Risk:</b> ${(call.scam_risk * 100).toFixed(0)}%</p>
+                    <p><b>Manipulation Risk:</b> ${(call.manipulation_risk * 100).toFixed(0)}%</p>
+                    <p><b>Recommended Action:</b> ${call.recommended_action}</p>
+                    <p><b>Status:</b> ${mobileReport.status}</p>
+
+                    <br>
+
+                    <a href="/transfer-page">
+                        <button class="primary-btn">
+                            Attempt Transfer
+                        </button>
+                    </a>
+                </div>
+            `;
+
+        } catch (error) {
+            showRaw({ error: String(error) });
+
+            document.getElementById("uploadResult").innerHTML = `
+                <div class="result-box hold-box">
+                    <h3>Backend Connection Failed</h3>
+                    <p>Make sure Flask is running.</p>
+                </div>
+            `;
+        }
+    }
+
+    function goToTransfer() {
+        window.location.href = "/transfer-page";
+    }
+</script>
+
+</body>
+</html>

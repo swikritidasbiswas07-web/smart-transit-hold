@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Transit Hold | Risk Detection</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Risk Detection Mode</h1>
+        <p>Analyse suspicious calls before making payments</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/">Logout</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <h2>Suspicious Call Analysis</h2>
+
+        <p class="small-text">
+            Paste the call transcript below. The system will analyse scam signals,
+            manipulation pressure, impersonation, urgency, secrecy requests and
+            payment-related instructions.
+        </p>
+
+        <label>Call Transcript</label>
+        <textarea id="callTranscript">Hello sir, I am calling from ABC Bank fraud prevention department. We detected suspicious international transactions on your debit card. Your card may be compromised. Open your mobile banking app and transfer your available balance to a temporary safe account immediately. Do not contact anyone else.</textarea>
+
+        <label>Detected Language</label>
+        <input id="detectedLanguage" value="en">
+
+        <button class="primary-btn" onclick="analyseCall()">
+            Analyse Call Risk
+        </button>
+
+        <button class="secondary-btn" onclick="useNormalCall()">
+            Use Normal Call Example
+        </button>
+
+        <div id="callResult"></div>
+    </section>
+
+    <section class="card">
+        <h2>Raw AI Output</h2>
+        <pre id="rawOutput" class="raw-output">No call analysed yet.</pre>
+    </section>
+
+</main>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    function showRaw(data) {
+        document.getElementById("rawOutput").textContent =
+            JSON.stringify(data, null, 4);
+    }
+
+    function useNormalCall() {
+        document.getElementById("callTranscript").value =
+            "Hello, this is your bank calling to remind you that your monthly statement is available. You can check it in the official banking app at your convenience. We will never ask you to transfer money or share OTP.";
+    }
+
+    async function analyseCall() {
+        const transcript = document.getElementById("callTranscript").value.trim();
+        const detectedLanguage = document.getElementById("detectedLanguage").value.trim();
+
+        if (!transcript) {
+            alert("Please enter a call transcript.");
+            return;
+        }
+
+        document.getElementById("callResult").innerHTML =
+            `<div class="result-box warn-box">Analysing call...</div>`;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/analyze-call-text`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    transcript: transcript,
+                    detected_language: detectedLanguage
+                })
+            });
+
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                document.getElementById("callResult").innerHTML =
+                    `<div class="result-box hold-box">Call analysis failed.</div>`;
+                return;
+            }
+
+            const call = data.data.call_result;
+
+            let boxClass = "safe-box";
+
+            if (call.risk_level === "HIGH") {
+                boxClass = "hold-box";
+            } else if (call.risk_level === "MEDIUM") {
+                boxClass = "warn-box";
+            }
+
+            document.getElementById("callResult").innerHTML = `
+                <div class="result-box ${boxClass}">
+                    <h3>Call Risk Level: ${call.risk_level}</h3>
+                    <p><b>Scam Risk:</b> ${(call.scam_risk * 100).toFixed(0)}%</p>
+                    <p><b>Manipulation Risk:</b> ${(call.manipulation_risk * 100).toFixed(0)}%</p>
+                    <p><b>Confidence:</b> ${(call.confidence * 100).toFixed(0)}%</p>
+                    <p><b>Recommended Action:</b> ${call.recommended_action}</p>
+                    <p><b>Detected Pattern:</b> ${call.primary_pattern}</p>
+                    <br>
+                    <a href="/transfer-page">
+                        <button class="primary-btn">
+                            Continue to Transfer
+                        </button>
+                    </a>
+                </div>
+            `;
+        } catch (error) {
+            document.getElementById("callResult").innerHTML =
+                `<div class="result-box hold-box">Backend connection failed.</div>`;
+
+            showRaw({
+                error: String(error),
+                hint: "Make sure Flask is running and CORS is enabled."
+            });
+        }
+    }
+</script>
+
+</body>
+</html>
