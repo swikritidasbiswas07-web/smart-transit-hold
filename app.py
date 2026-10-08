@@ -11,6 +11,8 @@ Open:
     http://127.0.0.1:5000/
 """
 
+import json
+import threading
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -142,6 +144,67 @@ def safe_bool(value, default=False):
         return False
 
     return default
+
+
+# =============================================================================
+# AUDIT LOGGING MODULE (JSON-BASED STORAGE)
+# =============================================================================
+
+AUDIT_LOG_FILE = BASE_DIR / "audit_logs.json"
+AUDIT_LOG_LOCK = threading.Lock()
+
+
+def read_audit_logs():
+    if not AUDIT_LOG_FILE.exists():
+        return []
+
+    try:
+        with open(AUDIT_LOG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+            return []
+    except Exception as error:
+        print(f"[AUDIT] Warning reading audit_logs.json: {error}")
+        return []
+
+
+def write_audit_logs(logs):
+    try:
+        with open(AUDIT_LOG_FILE, "w", encoding="utf-8") as f:
+            json.dump(logs, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as error:
+        print(f"[AUDIT] Error writing to audit_logs.json: {error}")
+        return False
+
+
+def log_audit_event(event_type, description, status, metadata=None):
+    """
+    Centralized audit logging function.
+    Stores records in audit_logs.json containing:
+    - id
+    - timestamp
+    - event_type
+    - description
+    - status
+    - metadata
+    """
+    record = {
+        "id": str(uuid4()),
+        "timestamp": now_iso(),
+        "event_type": str(event_type).upper(),
+        "description": str(description),
+        "status": str(status).upper(),
+        "metadata": metadata if isinstance(metadata, dict) else {}
+    }
+
+    with AUDIT_LOG_LOCK:
+        logs = read_audit_logs()
+        logs.append(record)
+        write_audit_logs(logs)
+
+    return record
 
 
 # =============================================================================
@@ -495,6 +558,11 @@ def verify_release_page():
     return render_template("verify_release.html")
 
 
+@app.route("/history")
+def history_page():
+    return render_template("history.html")
+
+
 # =============================================================================
 # API ROUTES
 # =============================================================================
@@ -512,10 +580,12 @@ def api_home():
             "risk_detection": "GET /risk-detection",
             "transfer_page": "GET /transfer-page",
             "result": "GET /result",
-            "verify_release": "GET /verify-release"
+            "verify_release": "GET /verify-release",
+            "history": "GET /history"
         },
         "api_routes": {
             "health": "GET /health",
+            "audit_log": "GET /api/audit-log",
             "analyze_call_text": "POST /api/analyze-call-text",
             "analyze_call_audio_path": "POST /api/analyze-call-audio-path",
             "analyze_call_audio_upload": "POST /api/analyze-call-audio-upload",
@@ -531,6 +601,21 @@ def api_home():
             "hold_review": "POST /api/hold/review",
             "reset": "POST /api/reset"
         }
+    })
+
+
+@app.route("/api/audit-log", methods=["GET"])
+def get_audit_log():
+    with AUDIT_LOG_LOCK:
+        logs = read_audit_logs()
+
+    # Return events in reverse chronological order (newest first)
+    reversed_logs = list(reversed(logs))
+
+    return success_response({
+        "total": len(reversed_logs),
+        "logs": reversed_logs,
+        "events": reversed_logs
     })
 
 

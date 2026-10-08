@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Transit Hold | Audit Trail & History</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>Smart Transit Hold Bank</h1>
+        <p>Security Audit Trail &amp; Transaction History</p>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/mobile-report">Mobile Report</a>
+        <a href="/risk-detection">Risk Detection</a>
+        <a href="/transfer-page">Transfer</a>
+        <a href="/result">Result</a>
+        <a href="/history">History</a>
+        <a href="/">Logout</a>
+    </nav>
+</header>
+
+<main class="page">
+
+    <section class="card">
+        <div class="history-header">
+            <div>
+                <h2>Audit Trail &amp; Event History</h2>
+                <p class="small-text">
+                    Comprehensive log of call analyses, payment transfers, Smart Transit Hold activations, 
+                    verification attempts, and administrative security reviews.
+                </p>
+            </div>
+            <div>
+                <button class="secondary-btn refresh-btn" onclick="fetchAuditLogs()">
+                    &#x21bb; Refresh Logs
+                </button>
+            </div>
+        </div>
+
+        <div class="grid history-stats-grid">
+            <div class="stat-card">
+                <span>Total Recorded Events</span>
+                <strong id="totalEventsCount">0</strong>
+            </div>
+            <div class="stat-card">
+                <span>Storage Backend</span>
+                <strong>audit_logs.json</strong>
+            </div>
+            <div class="stat-card">
+                <span>Ordering</span>
+                <strong>Reverse Chronological</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>Event Timeline</h3>
+        <div id="timelineContainer">
+            <div class="result-box warn-box">Loading audit logs...</div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>Raw API Response (GET /api/audit-log)</h3>
+        <pre id="rawOutput" class="raw-output">Loading...</pre>
+    </section>
+
+</main>
+
+<script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    function showRaw(data) {
+        document.getElementById("rawOutput").textContent = JSON.stringify(data, null, 4);
+    }
+
+    function getEventClass(eventType) {
+        switch (eventType) {
+            case "SMART_HOLD_ACTIVE":
+            case "RELEASE_BLOCKED":
+                return "hold-box";
+            case "PAYMENT_RELEASED":
+            case "OTP_VERIFIED":
+                return "safe-box";
+            case "SENT_TO_SECURITY_REVIEW":
+            case "TRANSFER_CANCELLED":
+                return "warn-box";
+            case "CALL_ANALYSED":
+            case "MOBILE_REPORT_SUBMITTED":
+            case "TRANSFER_ATTEMPTED":
+            default:
+                return "info-box";
+        }
+    }
+
+    function getEventBadgeColor(eventType) {
+        switch (eventType) {
+            case "SMART_HOLD_ACTIVE":
+            case "RELEASE_BLOCKED":
+                return "#dc2626";
+            case "PAYMENT_RELEASED":
+            case "OTP_VERIFIED":
+                return "#059669";
+            case "SENT_TO_SECURITY_REVIEW":
+            case "TRANSFER_CANCELLED":
+                return "#d97706";
+            case "CALL_ANALYSED":
+            case "MOBILE_REPORT_SUBMITTED":
+            case "TRANSFER_ATTEMPTED":
+            default:
+                return "#2563eb";
+        }
+    }
+
+    function renderMetadata(metadata) {
+        if (!metadata || Object.keys(metadata).length === 0) {
+            return "<span class='meta-empty'>None</span>";
+        }
+        let items = "";
+        for (const [key, value] of Object.entries(metadata)) {
+            const displayVal = typeof value === "object" ? JSON.stringify(value) : String(value);
+            items += `
+                <div class="meta-item">
+                    <span class="meta-key">${key}:</span>
+                    <span class="meta-val">${displayVal}</span>
+                </div>
+            `;
+        }
+        return `<div class="meta-grid">${items}</div>`;
+    }
+
+    async function fetchAuditLogs() {
+        const container = document.getElementById("timelineContainer");
+        container.innerHTML = `<div class="result-box warn-box">Fetching latest audit logs...</div>`;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/audit-log`);
+            const data = await response.json();
+            showRaw(data);
+
+            if (!data.success) {
+                container.innerHTML = `
+                    <div class="result-box hold-box">
+                        <b>Error loading audit logs:</b> ${data.error || "Unknown error"}
+                    </div>
+                `;
+                return;
+            }
+
+            const events = data.data.events || data.data.logs || [];
+            document.getElementById("totalEventsCount").textContent = events.length;
+
+            if (events.length === 0) {
+                container.innerHTML = `
+                    <div class="result-box warn-box">
+                        <b>No audit records found yet.</b><br>
+                        Interact with the system (analyze a call, submit a mobile report, attempt a transfer) 
+                        to record live audit events.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = "";
+            events.forEach((event, index) => {
+                const boxClass = getEventClass(event.event_type);
+                const badgeColor = getEventBadgeColor(event.event_type);
+                const metadataHtml = renderMetadata(event.metadata);
+
+                html += `
+                    <div class="timeline-card result-box ${boxClass}">
+                        <div class="timeline-header">
+                            <div>
+                                <span class="event-badge" style="background-color: ${badgeColor};">
+                                    ${event.event_type}
+                                </span>
+                                <span class="status-badge">Status: ${event.status || "N/A"}</span>
+                            </div>
+                            <div class="timeline-timestamp">
+                                ${event.timestamp || "No timestamp"}
+                            </div>
+                        </div>
+
+                        <p class="event-description"><b>Description:</b> ${event.description || "N/A"}</p>
+
+                        <div class="event-meta-container">
+                            <b>Metadata:</b>
+                            ${metadataHtml}
+                        </div>
+
+                        <div class="event-id-tag">
+                            <small>Record ID: <code>${event.id}</code></small>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+        } catch (error) {
+            showRaw({ error: String(error) });
+            container.innerHTML = `
+                <div class="result-box hold-box">
+                    <b>Failed to connect to backend API:</b> ${error.message}<br>
+                    Make sure the Flask server is running on <code>http://127.0.0.1:5000</code>.
+                </div>
+            `;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchAuditLogs);
+</script>
+
+</body>
+</html>
